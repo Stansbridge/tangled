@@ -148,7 +148,10 @@ class GameClient():
             while running:
                 self.screen.fill((white))
                 clock.tick(tickspeed)
-                framedelta = 1 / clock.get_fps()
+                if clock.get_fps() > 0:
+                    framedelta = 1 / clock.get_fps()
+                else:
+                    framedelta = 1
                 inputHandler.reloadClock(clock)
                 
                 if framedelta < tickspeed:

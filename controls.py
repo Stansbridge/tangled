@@ -1,7 +1,7 @@
 import pygame, time
 import pygame.locals
 
-INPUT_TIMEOUT_DEFAULT = 0.15
+INPUT_TIMEOUT_DEFAULT = 150
 
 class InputHandler(): 
     def __init__(self):
@@ -78,7 +78,8 @@ class InputHandler():
     
     def reloadClock(self, clock): #Call this every frame to keep the InputHandler in time.
         self.clock = clock
-        self.framedelta = 1 / self.clock.get_fps()
+        if self.clock.get_fps() > 0:
+            self.framedelta = 1 / self.clock.get_fps()
     
     def pressInput(self, whichInput):
         self.inputsPressed[whichInput] = pygame.time.get_ticks() + self.inputsTimeout[whichInput] * self.framedelta
