@@ -3,7 +3,7 @@ import pygame.locals
 
 INPUT_TIMEOUT_DEFAULT = 150
 
-class InputHandler():
+class InputHandler(): 
     def __init__(self):
         self.reloadJoysticks()
         self.bindingsKeyboard = {"up":[pygame.locals.K_UP],
@@ -36,7 +36,7 @@ class InputHandler():
                             "special":time.time(),
                             "start":time.time(),
                             "select":time.time()}
-        self.inputsTimeout = {"up":INPUT_TIMEOUT_DEFAULT,
+        self.inputsTimeout = {"up":INPUT_TIMEOUT_DEFAULT, #These aren't set in stone for a reason - you should be changing them on-the-fly to create custom cooldowns for certain actions.
                             "down":INPUT_TIMEOUT_DEFAULT,
                             "left":INPUT_TIMEOUT_DEFAULT,
                             "right":INPUT_TIMEOUT_DEFAULT,
@@ -47,7 +47,7 @@ class InputHandler():
                             "start":INPUT_TIMEOUT_DEFAULT,
                             "select":INPUT_TIMEOUT_DEFAULT}
     
-    def reloadJoysticks(self):
+    def reloadJoysticks(self): #Aside from being used during the InputHandler init, this can be used for a menu option for if the player connects a joystick after the game has already start.
         pygame.joystick.init()
         joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
         self.joystick = False
@@ -55,31 +55,52 @@ class InputHandler():
             joystick.init()
         if pygame.joystick.get_count() > 0 and not me.name.startswith("windows"):
             self.joystick = pygame.joystick.Joystick(0)
-   
-    def checkHold(self, event):
+    
+    def reloadTimeout(self, which): #Call this when you're done with a custom timeout and want to reset it back to the default. You should do this any time the game changes state.
+        if which == "all":
+            for put in inputsTimeout:
+                inputsTimeout[put] = INPUT_TIMEOUT_DEFAULT
+        else:
+            try:
+                inputsTimeout[which] = INPUT_TIMEOUT_DEFAULT
+            except:
+                print(client.error_message + ": Tried to reset an input's timeout, but it was " + str(which) + " and not a valid input")
+    
+    #To use the check functions, you still need to pass the event yourself as the InputHandler can't poll for them. Use `for event in pygame.event.get():` to do this.
+    def checkHold(self, event): #Use this one if you don't care how often the input is being pressed.
+        returned = False
         if event.type == pygame.locals.KEYDOWN:
             for keysID, keys in self.bindingsKeyboard.items():
                 if event.key in keys:
+                    returned = keysID
                     self.inputsPressed[keysID] = time.time() + self.inputsTimeout[keysID]
-                    return keysID
+                    pygame.event.clear(pygame.locals.KEYDOWN)
+                    break
         elif event.type == pygame.locals.JOYBUTTONDOWN:
             for buttonsID, buttons in self.bindingsJoystick.items():
                 if event.button in buttons:
-                    self.inputsPressed[keysID] = time.time() + self.inputsTimeout[buttonsID]
-                    return buttonsID
-        return False
+                    returned = buttonsID
+                    self.inputsPressed[buttonsID] = time.time() + self.inputsTimeout[buttonsID]
+                    pygame.event.clear(pygame.locals.JOYBUTTONDOWN)
+                    break
+        return returned
     
-    def checkPress(self, event):
+    def checkPress(self, event): #Use this one if you want to make sure the input has only been pressed once and isn't being held down.
+        returned = False
         if event.type == pygame.locals.KEYDOWN:
             for keysID, keys in self.bindingsKeyboard.items():
                 if event.key in keys:
                     if self.inputsPressed[keysID] <= time.time():
-                        return keysID
+                        returned = keysID
                     self.inputsPressed[keysID] = time.time() + self.inputsTimeout[keysID]
+                    pygame.event.clear(pygame.locals.KEYDOWN)
+                    break
         elif event.type == pygame.locals.JOYBUTTONDOWN:
             for buttonsID, buttons in self.bindingsJoystick.items():
                 if event.button in buttons:
                     if self.inputsPressed[buttonsID] <= time.time():
-                        return buttonsID
+                        returned = buttonsID
                     self.inputsPressed[buttonsID] = time.time() + self.inputsTimeout[buttonsID]
-        return False
+                    pygame.event.clear(pygame.locals.JOYBUTTONDOWN)
+                    break
+        return returned

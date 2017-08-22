@@ -139,6 +139,7 @@ class GameClient():
         self.cast = False # Flag for when player casts spell.
         self.status_time = 0
         me = self.players.me
+        inputHandler = InputHandler() #Handles the inputs. They can get stage fright sometimes.
 
         if me.mute == "False":
             LevelMusic.play_music_repeat()
@@ -171,62 +172,42 @@ class GameClient():
                         LevelMusic.play_music_repeat()
                     self.game_state = GameState.MENU
                 else:
-                    # handle inputs
+                    #Handle movement.
                     if last_direction == None:
                         last_direction = Movement.DOWN
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
                             running = False
                             break
-                        elif event.type == pygame.locals.KEYDOWN and event.key == pygame.locals.K_ESCAPE:
-                            self.set_state(GameState.MENU)
-                        elif event.type == pygame.locals.KEYDOWN:
-                            if event.key == pygame.locals.K_UP or event.key == pygame.locals.K_w:
-                                me.move(Movement.UP)
-                                last_direction = Movement.UP
-                                self.toMove = True
-                            elif event.key == pygame.locals.K_DOWN or event.key == pygame.locals.K_s:
-                                me.move(Movement.DOWN)
-                                last_direction = Movement.DOWN
-                                self.toMove = True
-                            elif event.key == pygame.locals.K_LEFT or event.key == pygame.locals.K_a:
-                                me.move(Movement.LEFT)
-                                last_direction = Movement.LEFT
-                                self.toMove = True
-                            elif event.key == pygame.locals.K_RIGHT or event.key == pygame.locals.K_d:
-                                me.move(Movement.RIGHT)
-                                last_direction = Movement.RIGHT
-                                self.toMove = True
-                            elif event.key == pygame.locals.K_e:
-                                me.change_spell()
-                            elif event.key == pygame.locals.K_RETURN or event.key == pygame.locals.K_SPACE :
-                                if me.can_fire_ability:
-                                    self.cast = me.attack(last_direction)
-
-                            if event.key == pygame.locals.K_r and me.can_step_ability:
-                                me.step = 2
-                                me.steptime = time.time()
-                                me.can_step_ability = False
-
-                            if event.key == pygame.locals.K_q:
-                                if me.can_switch_spell:
-                                    me.change_spell()
-                                    me.switch_time = time.time()
-                                    me.can_switch_spell = False
-
-                            pygame.event.clear(pygame.locals.KEYDOWN)
-
-                    if event.type == pygame.locals.MOUSEBUTTONDOWN:
-                        if event.button == 0:
+                        eventPress = inputHandler.checkPress(event)
+                        eventHold = inputHandler.checkHold(event)
+                        if eventPress == "start":
+                            pass #Pause menu will be activated here once we readd it
+                        elif eventHold == "up":
+                            me.move(Movement.UP)
+                            last_direction = Movement.UP
+                            self.toMove = True
+                        elif eventHold == "down":
+                            me.move(Movement.DOWN)
+                            last_direction = Movement.DOWN
+                            self.toMove = True
+                        elif eventHold == "left":
+                            me.move(Movement.LEFT)
+                            last_direction = Movement.LEFT
+                            self.toMove = True
+                        elif eventHold == "right":
+                            me.move(Movement.RIGHT)
+                            last_direction = Movement.RIGHT
+                            self.toMove = True
+                        elif eventPress == "change":
+                            me.change_spell()
+                        elif eventHold == "enter":
                             if me.can_fire_ability:
                                 self.cast = me.attack(last_direction)
-                            pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
-                        if event.button == 4 or event.button == 5:
-                            if me.can_switch_spell:
-                                me.change_spell()
-                                me.switch_time = time.time()
-                                me.can_switch_spell = False
-                                pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
+                        elif eventPress == "special" and me.can_step_ability:
+                            me.step = 2
+                            me.steptime = time.time()
+                            me.can_step_ability = False
 
                     # https://stackoverflow.com/a/15596758/3954432
                     # Handle controller input by setting flags (move, neutral)
