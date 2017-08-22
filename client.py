@@ -23,6 +23,7 @@ from screen import MainMenu
 from level import SaveLevel
 from tile import Tileset
 from music import LevelMusic
+from controls import InputHandler
 
 white = (255,255,255)
 black = (0,0,0)
@@ -50,8 +51,8 @@ projectile_images = []
 for path in projectile_paths:
     projectile_images.append(pygame.image.load(path))
 
-buttons = {"A":1, "B":2, "X":0, "Y":3, "L":4, "R":5, "Start":9, "Select":8} #Use these for the PiHut SNES controller
-#buttons = {"A":0, "B":1, "X":2, "Y":3, "L":4, "R":5, "Start":7, "Select":6} #Use these for the iBuffalo SNES controller
+#buttons = {"A":1, "B":2, "X":0, "Y":3, "L":4, "R":5, "Start":9, "Select":8} #Use these for the PiHut SNES controller
+buttons = {"A":0, "B":1, "X":2, "Y":3, "L":4, "R":5, "Start":7, "Select":6} #Use these for the iBuffalo SNES controller
 
 error_message = "Everything is lava"
 
