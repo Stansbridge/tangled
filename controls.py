@@ -36,16 +36,16 @@ class InputHandler():
                             "special":[9],
                             "start":[],
                             "select":[]}
-        self.inputsPressed = {"up":time.time(),
-                            "down":time.time(),
-                            "left":time.time(),
-                            "right":time.time(),
-                            "enter":time.time(),
-                            "back":time.time(),
-                            "change":time.time(),
-                            "special":time.time(),
-                            "start":time.time(),
-                            "select":time.time()}
+        self.inputsPressed = {"up":pygame.time.get_ticks(),
+                            "down":pygame.time.get_ticks(),
+                            "left":pygame.time.get_ticks(),
+                            "right":pygame.time.get_ticks(),
+                            "enter":pygame.time.get_ticks(),
+                            "back":pygame.time.get_ticks(),
+                            "change":pygame.time.get_ticks(),
+                            "special":pygame.time.get_ticks(),
+                            "start":pygame.time.get_ticks(),
+                            "select":pygame.time.get_ticks()}
         self.inputsTimeout = {"up":INPUT_TIMEOUT_DEFAULT, #These aren't set in stone for a reason - you should be changing them on-the-fly to create custom cooldowns for certain actions.
                             "down":INPUT_TIMEOUT_DEFAULT,
                             "left":INPUT_TIMEOUT_DEFAULT,
@@ -76,6 +76,13 @@ class InputHandler():
             except:
                 print(client.error_message + ": Tried to reset an input's timeout, but it was " + str(which) + " and not a valid input")
     
+    def reloadClock(self, clock): #Call this every frame to keep the InputHandler in time.
+        self.clock = clock
+        self.framedelta = 1 / self.clock.get_fps()
+    
+    def pressInput(self, whichInput):
+        self.inputsPressed[whichInput] = pygame.time.get_ticks() + self.inputsTimeout[whichInput] * self.framedelta
+    
     #To use the check functions, you still need to pass the event yourself as the InputHandler can't poll for them. Use `for event in pygame.event.get():` to do this.
     def checkHold(self, event): #Use this one if you don't care how often the input is being pressed.
         returned = False
@@ -83,14 +90,14 @@ class InputHandler():
             for keysID, keys in self.bindingsKeyboard.items():
                 if event.key in keys:
                     returned = keysID
-                    self.inputsPressed[keysID] = time.time() + self.inputsTimeout[keysID]
+                    self.pressInput(keysID)
                     pygame.event.clear(pygame.locals.KEYDOWN)
                     break
         elif event.type == pygame.locals.JOYBUTTONDOWN: #Gamepad button pressed
             for buttonsID, buttons in self.bindingsJoystick.items():
                 if event.button in buttons:
                     returned = buttonsID
-                    self.inputsPressed[buttonsID] = time.time() + self.inputsTimeout[buttonsID]
+                    self.pressInput(buttonsID)
                     pygame.event.clear(pygame.locals.JOYBUTTONDOWN)
                     break
         elif event.type == pygame.locals.JOYAXISMOTION: #Gamepad d-pad or joystick moved (note: these bindings are hardcoded)
@@ -104,11 +111,13 @@ class InputHandler():
                     returned = "up"
                 elif event.value < 0:
                     returned = "down"
+            if returned:
+                self.pressInput(returned)
         elif event.type == pygame.locals.MOUSEBUTTONDOWN:
             for buttonsID, buttons in self.bindingsMouse.items():
                 if event.button in buttons:
                     returned = buttonsID
-                    self.inputsPressed[buttonsID] = time.time() + self.inputsTimeout[buttonsID]
+                    self.pressInput(buttonsID)
                     pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
                     break
         return returned
@@ -118,17 +127,17 @@ class InputHandler():
         if event.type == pygame.locals.KEYDOWN:
             for keysID, keys in self.bindingsKeyboard.items():
                 if event.key in keys:
-                    if self.inputsPressed[keysID] <= time.time():
+                    if self.inputsPressed[keysID] <= pygame.time.get_ticks():
                         returned = keysID
-                    self.inputsPressed[keysID] = time.time() + self.inputsTimeout[keysID]
+                    self.pressInput(keysID)
                     pygame.event.clear(pygame.locals.KEYDOWN)
                     break
         elif event.type == pygame.locals.JOYBUTTONDOWN:
             for buttonsID, buttons in self.bindingsJoystick.items():
                 if event.button in buttons:
-                    if self.inputsPressed[buttonsID] <= time.time():
+                    if self.inputsPressed[buttonsID] <= pygame.time.get_ticks():
                         returned = buttonsID
-                    self.inputsPressed[buttonsID] = time.time() + self.inputsTimeout[buttonsID]
+                    self.pressInput(buttonsID)
                     pygame.event.clear(pygame.locals.JOYBUTTONDOWN)
                     break
         elif event.type == pygame.locals.JOYAXISMOTION:
@@ -144,16 +153,16 @@ class InputHandler():
                 elif event.value < 0:
                     inputAxis = "down"
             if inputAxis:
-                if self.inputsPressed[inputAxis] <= time.time():
-                    self.inputsPressed[inputAxis] = time.time() + self.inputsTimeout[buttonsID]
+                if self.inputsPressed[inputAxis] <= pygame.time.get_ticks():
+                    self.pressInput(inputAxis)
                     returned = inputAxis
             pygame.event.clear(pygame.locals.JOYAXISMOTION)
         elif event.type == pygame.locals.MOUSEBUTTONDOWN:
             for buttonsID, buttons in self.bindingsMouse.items():
                 if event.button in buttons:
-                    if self.inputsPressed[buttonsID] <= time.time():
+                    if self.inputsPressed[buttonsID] <= pygame.time.get_ticks():
                         returned = buttonsID
-                    self.inputsPressed[buttonsID] = time.time() + self.inputsTimeout[buttonsID]
+                    self.pressInput(buttonsID)
                     pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
                     break
         return returned

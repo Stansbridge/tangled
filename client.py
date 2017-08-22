@@ -148,7 +148,12 @@ class GameClient():
             while running:
                 self.screen.fill((white))
                 clock.tick(tickspeed)
-
+                framedelta = 1 / clock.get_fps()
+                inputHandler.reloadClock(clock)
+                
+                if framedelta < tickspeed:
+                    print("Some things might be lava: Your game is running at {0} FPS rather than the maximum ({1}). The default FPS might need to be changed.".format(str(1 / framedelta), str(tickspeed)))
+                
                 if(self.game_state.value == GameState.MENU.value):
                     self.menu.render((self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4))
                     for event in pygame.event.get():
