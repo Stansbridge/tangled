@@ -1,8 +1,6 @@
 import pygame, time
 import pygame.locals
 
-INPUT_TIMEOUT_DEFAULT = 0.15
-
 class InputHandler(): 
     def __init__(self):
         self.reloadJoysticks()
@@ -56,6 +54,16 @@ class InputHandler():
                             "special":0,
                             "start":0,
                             "select":0}
+        self.inputsTimer = {"up":0,
+                            "down":0,
+                            "left":0,
+                            "right":0,
+                            "enter":0,
+                            "back":0,
+                            "change":0,
+                            "special":0,
+                            "start":0,
+                            "select":0}
     
     def reloadJoysticks(self): #Aside from being used during the InputHandler init, this can be used for a menu option for if the player connects a joystick after the game has already start.
         pygame.joystick.init()
@@ -66,72 +74,64 @@ class InputHandler():
         if pygame.joystick.get_count() > 0:
             self.joystick = pygame.joystick.Joystick(0)
     
-    def reloadTimeout(self, which): #Call this when you're done with a custom timeout and want to reset it back to the default. You should do this any time the game changes state.
+    def resetTimeout(self, which): #Call this when you're done with a custom timeout and want to reset it back to the default. You should do this any time the game changes state.
         if which == "all":
             for put in inputsTimeout:
-                inputsTimeout[put] = INPUT_TIMEOUT_DEFAULT
+                inputsTimeout[put] = 0
         else:
             try:
-                inputsTimeout[which] = INPUT_TIMEOUT_DEFAULT
+                inputsTimeout[which] = 0
             except:
-                print(client.error_message + ": Tried to reset an input's timeout, but it was " + str(which) + " and not a valid input")
+                print("Everything is lava: {0} is not a valid input for InputHandler.reloadTimeout()".format(which))
     
-    def update(self): #Run this every frame.
-        for keysID, keys in self.bindingsKeyboard.items():
-            for key in keys:
-                try:
-                    if pygame.key.get_pressed()[key]:
-                        self.inputsPressed[keysID] = ("key",key)
-                    elif self.inputsPressed[keysID] == ("key",key):
-                        self.inputsPressed[keysID] = False
-                except:
-                    print("Everything is lava: {0} is not a valid key".format(key))
-        for buttonsID, buttons in self.bindingsJoystick.items():
-            for button in buttons:
-                try:
-                    if self.joystick.get_button(button):
-                        self.inputsPressed[buttonsID] = ("button",button)
-                    elif self.inputsPressed[buttonsID] == ("button",button):
-                        self.inputsPressed[buttonsID] = False
-                except:
-                    print("Everything is lava: {0} is not a valid joystick button".format(button))
-        for buttonsID, buttons in self.bindingsMouse.items():
-            for button in buttons:
-                try:
-                    if pygame.mouse.get_pressed()[button]:
-                        self.inputsPressed[buttonsID] = ("mouse",button)
-                    elif self.inputsPressed[buttonsID] == ("mouse",button):
-                        self.inputsPressed[buttonsID] = False
-                except:
-                    print("Everything is lava: {0} is not a valid mouse button".format(button))
+    def setTimeout(self, which, timeout):
+        if which == "all":
+            for put in self.inputsTimeout:
+                self.inputsTimeout[put] = timeout
+        else:
+            #try:
+            self.inputsTimeout[which] = timeout
+            #except:
+            #    print("Everything is lava: {0} is not a valid input for InputHandler.setTimeout()".format(which))
+    
+    def resetTimer(self, which):
+        self.inputsTimer[which] = time.time() + self.inputsTimeout[which]
+    
+    def inputCheck(self, which): #For internal use only.
+        for key in self.bindingsKeyboard[which]:
+            if pygame.key.get_pressed()[key]:
+                return True
+        for button in self.bindingsJoystick[which]:
+            if self.joystick.get_button(button):
+                return True
+        for button in self.bindingsMouse[which]:
+            if pygame.mouse.get_pressed()[button]:
+                return True
     
     def checkHold(self, which): #Use this one if you don't care how often the input is being pressed.
-        self.update()
-        try:
-            for key in self.bindingsKeyboard[which]:
-                if pygame.key.get_pressed()[key]:
-                    return True
-            for button in self.bindingsJoystick[which]:
-                if self.joystick.get_button(button):
-                    return True
-            for button in self.bindingsMouse[which]:
-                if pygame.mouse.get_pressed()[button]:
-                    return True
-            return False
-        except:
-            print("Everything is lava: {0} is not a valid input for InputHandler.checkHold()".format(which))
-            return False
-    
-    def checkPress(self, which): #Use this one if you want to make sure the input has only been pressed once and isn't being held down.
-        try:
-            if self.inputsPressed[which]:
-                return False
-            else:
-                self.update()
-                if self.inputsPressed[which]:
+        if self.inputsTimeout[which]:
+            if self.inputsTimer[which] < time.time():
+                if self.inputCheck(which):
+                    self.resetTimer(which)
                     return True
                 else:
                     return False
-        except:
-            print("Everything is lava: {0} is not a valid input for InputHandler.checkHold()".format(which))
+            else:
+                return False
+        else:
+            return self.inputCheck(which)
+        return False
+    
+    def checkPress(self, which): #Use this one if you want to make sure the input has only been pressed once and isn't being held down.
+        if not self.inputsPressed[which]:
+            if self.inputCheck(which):
+                self.inputsPressed[which] = True
+                return True
+            else:
+                return False
+        else:
+            if self.inputCheck(which):
+                self.inputsPressed[which] = True
+            else:
+                self.inputsPressed[which] = False
             return False

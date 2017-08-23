@@ -184,6 +184,9 @@ class GameClient():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
                             running = False
                             break
+                    if not inputHandler.inputsTimeout["change"]:
+                        inputHandler.setTimeout("change", 0.5)
+                        inputHandler.setTimeout("enter", 0.5)
                     if inputHandler.checkPress("start"):
                         pass #Pause menu will be activated here once we readd it
                     elif inputHandler.checkHold("up"):
@@ -204,19 +207,12 @@ class GameClient():
                         self.toMove = True
                     elif inputHandler.checkPress("change"):
                         me.change_spell()
-                    #elif inputHandler.checkHold("enter"):
-                    #    if me.can_fire_ability:
-                    #        self.cast = me.attack(last_direction)
+                    elif inputHandler.checkHold("enter"):
+                        self.cast = me.attack(last_direction)
                     elif inputHandler.checkPress("special") and me.can_step_ability:
                         me.step = 2
                         me.steptime = time.time()
                         me.can_step_ability = False
-
-                    if self.cast == True:
-                        me.can_fire_ability = False
-                        me.firetime = time.time()
-                    elif time.time() - me.firetime > 0.5:
-                        me.can_fire_ability = True
 
                     if time.time() - me.steptime >30:
                         me.can_step_ability = True
@@ -325,7 +321,10 @@ class GameClient():
                         self.network.node.shout("world:position", bson.dumps(me.get_position()._asdict()))
                         self.toMove = False
                     if self.cast == True:
-                        self.network.node.shout("world:combat", bson.dumps(me.cast_spells[-1].get_properties()._asdict()))
+                        try:
+                            self.network.node.shout("world:combat", bson.dumps(me.cast_spells[-1].get_properties()._asdict()))
+                        except:
+                            print(error_message + ": me.cast_spells is empty")
                         self.cast = False
 
 
