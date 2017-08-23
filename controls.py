@@ -1,7 +1,7 @@
 import pygame, time
 import pygame.locals
 
-INPUT_TIMEOUT_DEFAULT = 150
+INPUT_TIMEOUT_DEFAULT = 0.15
 
 class InputHandler(): 
     def __init__(self):
@@ -36,26 +36,16 @@ class InputHandler():
                             "special":[9],
                             "start":[],
                             "select":[]}
-        self.inputsPressed = {"up":pygame.time.get_ticks(),
-                            "down":pygame.time.get_ticks(),
-                            "left":pygame.time.get_ticks(),
-                            "right":pygame.time.get_ticks(),
-                            "enter":pygame.time.get_ticks(),
-                            "back":pygame.time.get_ticks(),
-                            "change":pygame.time.get_ticks(),
-                            "special":pygame.time.get_ticks(),
-                            "start":pygame.time.get_ticks(),
-                            "select":pygame.time.get_ticks()}
-        self.inputsTimeout = {"up":INPUT_TIMEOUT_DEFAULT, #These aren't set in stone for a reason - you should be changing them on-the-fly to create custom cooldowns for certain actions.
-                            "down":INPUT_TIMEOUT_DEFAULT,
-                            "left":INPUT_TIMEOUT_DEFAULT,
-                            "right":INPUT_TIMEOUT_DEFAULT,
-                            "enter":INPUT_TIMEOUT_DEFAULT,
-                            "back":INPUT_TIMEOUT_DEFAULT,
-                            "change":INPUT_TIMEOUT_DEFAULT,
-                            "special":INPUT_TIMEOUT_DEFAULT,
-                            "start":INPUT_TIMEOUT_DEFAULT,
-                            "select":INPUT_TIMEOUT_DEFAULT}
+        self.inputsPressed = {"up":False,
+                            "down":False,
+                            "left":False,
+                            "right":False,
+                            "enter":False,
+                            "back":False,
+                            "change":False,
+                            "special":False,
+                            "start":False,
+                            "select":False}
     
     def reloadJoysticks(self): #Aside from being used during the InputHandler init, this can be used for a menu option for if the player connects a joystick after the game has already start.
         pygame.joystick.init()
@@ -63,7 +53,7 @@ class InputHandler():
         self.joystick = False
         for joystick in joysticks:
             joystick.init()
-        if pygame.joystick.get_count() > 0 and not me.name.startswith("windows"):
+        if pygame.joystick.get_count() > 0:
             self.joystick = pygame.joystick.Joystick(0)
     
     def reloadTimeout(self, which): #Call this when you're done with a custom timeout and want to reset it back to the default. You should do this any time the game changes state.
@@ -76,94 +66,75 @@ class InputHandler():
             except:
                 print(client.error_message + ": Tried to reset an input's timeout, but it was " + str(which) + " and not a valid input")
     
-    def reloadClock(self, clock): #Call this every frame to keep the InputHandler in time.
-        self.clock = clock
-        if self.clock.get_fps() > 0:
-            self.framedelta = 1 / self.clock.get_fps()
-    
-    def pressInput(self, whichInput):
-        self.inputsPressed[whichInput] = pygame.time.get_ticks() + self.inputsTimeout[whichInput] * self.framedelta
-    
-    #To use the check functions, you still need to pass the event yourself as the InputHandler can't poll for them. Use `for event in pygame.event.get():` to do this.
-    def checkHold(self, event): #Use this one if you don't care how often the input is being pressed.
-        returned = False
-        if event.type == pygame.locals.KEYDOWN: #Keyboard key pressed
-            for keysID, keys in self.bindingsKeyboard.items():
-                if event.key in keys:
-                    returned = keysID
-                    self.pressInput(keysID)
-                    pygame.event.clear(pygame.locals.KEYDOWN)
-                    break
-        elif event.type == pygame.locals.JOYBUTTONDOWN: #Gamepad button pressed
-            for buttonsID, buttons in self.bindingsJoystick.items():
-                if event.button in buttons:
-                    returned = buttonsID
-                    self.pressInput(buttonsID)
-                    pygame.event.clear(pygame.locals.JOYBUTTONDOWN)
-                    break
-        elif event.type == pygame.locals.JOYAXISMOTION: #Gamepad d-pad or joystick moved (note: these bindings are hardcoded)
-            if event.axis == 0: #X axis
-                if event.value > 0:
-                    returned = "right"
-                elif event.value < 0:
-                    returned = "left"
-            elif event.axis == 1: #Y axis
-                if event.value > 0:
-                    returned = "up"
-                elif event.value < 0:
-                    returned = "down"
-            if returned:
-                self.pressInput(returned)
-        elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-            for buttonsID, buttons in self.bindingsMouse.items():
-                if event.button in buttons:
-                    returned = buttonsID
-                    self.pressInput(buttonsID)
-                    pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
-                    break
-        return returned
-    
-    def checkPress(self, event): #Use this one if you want to make sure the input has only been pressed once and isn't being held down.
-        returned = False
+    def update(self, event): #Run this every frame with the event from `for event in pygame.event.get():` so that the InputHandler knows what's going on.
         if event.type == pygame.locals.KEYDOWN:
             for keysID, keys in self.bindingsKeyboard.items():
                 if event.key in keys:
-                    if self.inputsPressed[keysID] <= pygame.time.get_ticks():
-                        returned = keysID
-                    self.pressInput(keysID)
-                    pygame.event.clear(pygame.locals.KEYDOWN)
-                    break
+                    self.inputsPressed[keysID] = ("key",event.key)
+            pygame.event.clear(pygame.locals.KEYDOWN)
         elif event.type == pygame.locals.JOYBUTTONDOWN:
-            for buttonsID, buttons in self.bindingsJoystick.items():
-                if event.button in buttons:
-                    if self.inputsPressed[buttonsID] <= pygame.time.get_ticks():
-                        returned = buttonsID
-                    self.pressInput(buttonsID)
-                    pygame.event.clear(pygame.locals.JOYBUTTONDOWN)
-                    break
+            for keysID, keys in self.bindingsJoystick.items():
+                if event.button in keys:
+                    self.inputsPressed[keysID] = ("button",event.button)
+            pygame.event.clear(pygame.locals.JOYBUTTONDOWN)
         elif event.type == pygame.locals.JOYAXISMOTION:
-            inputAxis = False
             if event.axis == 0: #X axis
                 if event.value > 0:
-                    inputAxis = "right"
+                    self.inputsPressed["right"] = ("axis",event.axis)
                 elif event.value < 0:
-                    inputAxis = "left"
+                    self.inputsPressed["left"] = ("axis",event.axis)
+                else:
+                    if self.inputsPressed["right"] == ("axis",event.axis):
+                        self.inputsPressed["right"] = False
+                    if self.inputsPressed["left"] == ("axis",event.axis):
+                        self.inputsPressed["left"] = False
             elif event.axis == 1: #Y axis
                 if event.value > 0:
-                    inputAxis = "up"
+                    self.inputsPressed["down"] = ("axis",event.axis)
                 elif event.value < 0:
-                    inputAxis = "down"
-            if inputAxis:
-                if self.inputsPressed[inputAxis] <= pygame.time.get_ticks():
-                    self.pressInput(inputAxis)
-                    returned = inputAxis
+                    self.inputsPressed["up"] = ("axis",event.axis)
+                else:
+                    if self.inputsPressed["down"] == ("axis",event.axis):
+                        self.inputsPressed["down"] = False
+                    if self.inputsPressed["up"] == ("axis",event.axis):
+                        self.inputsPressed["up"] = False
             pygame.event.clear(pygame.locals.JOYAXISMOTION)
         elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-            for buttonsID, buttons in self.bindingsMouse.items():
-                if event.button in buttons:
-                    if self.inputsPressed[buttonsID] <= pygame.time.get_ticks():
-                        returned = buttonsID
-                    self.pressInput(buttonsID)
-                    pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
-                    break
-        return returned
+            for keysID, keys in self.bindingsMouse.items():
+                if event.button in keys:
+                    self.inputsPressed[keysID] = ("mouse",event.button)
+            pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
+        elif event.type == pygame.locals.KEYUP:
+            for pressed in self.inputsPressed:
+                if self.inputsPressed[pressed] == ("key",event.key):
+                    self.inputsPressed[pressed] = False
+            pygame.event.clear(pygame.locals.KEYUP)
+        elif event.type == pygame.locals.JOYBUTTONUP:
+            for pressed in self.inputsPressed:
+                if self.inputsPressed[pressed] == ("button",event.button):
+                    self.inputsPressed[pressed] = False
+            pygame.event.clear(pygame.locals.JOYBUTTONUP)
+        elif event.type == pygame.locals.MOUSEBUTTONUP:
+            for pressed in self.inputsPressed:
+                if self.inputsPressed[pressed] == ("mouse",event.button):
+                    self.inputsPressed[pressed] = False
+            pygame.event.clear(pygame.locals.MOUSEBUTTONUP)
+        print(self.inputsPressed)
+    
+    def checkHold(self, which): #Use this one if you don't care how often the input is being pressed.
+        try:
+            return self.inputsPressed[which]
+        except:
+            print("Everything is lava: {0} is not a valid input for InputHandler.checkHold()".format(which))
+            return False
+    
+    def checkPress(self, which): #Use this one if you want to make sure the input has only been pressed once and isn't being held down.
+        try:
+            if self.inputsPressed[which]:
+                self.inputsPressed[which] = False
+                return True
+            else:
+                return False
+        except:
+            print("Everything is lava: {0} is not a valid input for InputHandler.checkHold()".format(which))
+            return False

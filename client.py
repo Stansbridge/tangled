@@ -152,10 +152,6 @@ class GameClient():
                     framedelta = 1 / clock.get_fps()
                 else:
                     framedelta = 1
-                inputHandler.reloadClock(clock)
-                
-                if framedelta < tickspeed:
-                    print("Some things might be lava: Your game is running at {0} FPS rather than the maximum ({1}). The default FPS might need to be changed.".format(str(1 / framedelta), str(tickspeed)))
                 
                 if(self.game_state.value == GameState.MENU.value):
                     self.menu.render((self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4))
@@ -187,32 +183,31 @@ class GameClient():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
                             running = False
                             break
-                        eventPress = inputHandler.checkPress(event)
-                        eventHold = inputHandler.checkHold(event)
-                        if eventPress == "start":
+                        inputHandler.update(event)
+                        if inputHandler.checkPress("start"):
                             pass #Pause menu will be activated here once we readd it
-                        elif eventHold == "up":
+                        elif inputHandler.checkHold("up"):
                             me.move(Movement.UP)
                             last_direction = Movement.UP
                             self.toMove = True
-                        elif eventHold == "down":
+                        elif inputHandler.checkHold("down"):
                             me.move(Movement.DOWN)
                             last_direction = Movement.DOWN
                             self.toMove = True
-                        elif eventHold == "left":
+                        elif inputHandler.checkHold("left"):
                             me.move(Movement.LEFT)
                             last_direction = Movement.LEFT
                             self.toMove = True
-                        elif eventHold == "right":
+                        elif inputHandler.checkHold("right"):
                             me.move(Movement.RIGHT)
                             last_direction = Movement.RIGHT
                             self.toMove = True
-                        elif eventPress == "change":
+                        elif inputHandler.checkPress("change"):
                             me.change_spell()
-                        elif eventHold == "enter":
+                        elif inputHandler.checkHold("enter"):
                             if me.can_fire_ability:
                                 self.cast = me.attack(last_direction)
-                        elif eventPress == "special" and me.can_step_ability:
+                        elif inputHandler.checkPress("special") and me.can_step_ability:
                             me.step = 2
                             me.steptime = time.time()
                             me.can_step_ability = False
