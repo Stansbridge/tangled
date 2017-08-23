@@ -51,9 +51,6 @@ projectile_images = []
 for path in projectile_paths:
     projectile_images.append(pygame.image.load(path))
 
-#buttons = {"A":1, "B":2, "X":0, "Y":3, "L":4, "R":5, "Start":9, "Select":8} #Use these for the PiHut SNES controller
-buttons = {"A":0, "B":1, "X":2, "Y":3, "L":4, "R":5, "Start":7, "Select":6} #Use these for the iBuffalo SNES controller
-
 error_message = "Everything is lava"
 
 class GameState(Enum):
@@ -98,12 +95,6 @@ class GameClient():
         # Initialise music
         pygame.mixer.init()
 
-        # Initialise the joystick.
-        pygame.joystick.init()
-        joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-        for joystick in joysticks:
-            joystick.init()
-
         pygame.event.set_allowed(None)
         pygame.event.set_allowed([pygame.locals.QUIT,
             pygame.locals.JOYAXISMOTION,
@@ -139,7 +130,6 @@ class GameClient():
         self.cast = False # Flag for when player casts spell.
         self.status_time = 0
         me = self.players.me
-        first_time = False
         inputHandler = InputHandler() #Handles the inputs. They can get stage fright sometimes.
 
         if me.mute == "False":
@@ -149,10 +139,6 @@ class GameClient():
             while running:
                 self.screen.fill((white))
                 clock.tick(tickspeed)
-                if clock.get_fps() > 0:
-                    framedelta = 1 / clock.get_fps()
-                else:
-                    framedelta = 1
                 
                 if(self.game_state.value == GameState.MENU.value):
                     self.menu.render((self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4))
