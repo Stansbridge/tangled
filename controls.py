@@ -32,8 +32,8 @@ class InputHandler():
                             "right":[],
                             "enter":[0],
                             "back":[2],
-                            "change":[3,4,7],
-                            "special":[8],
+                            "change":[1],
+                            "special":[],
                             "start":[],
                             "select":[]}
         self.inputsPressed = {"up":False,
@@ -46,6 +46,16 @@ class InputHandler():
                             "special":False,
                             "start":False,
                             "select":False}
+        self.inputsTimeout = {"up":0,
+                            "down":0,
+                            "left":0,
+                            "right":0,
+                            "enter":0,
+                            "back":0,
+                            "change":0,
+                            "special":0,
+                            "start":0,
+                            "select":0}
     
     def reloadJoysticks(self): #Aside from being used during the InputHandler init, this can be used for a menu option for if the player connects a joystick after the game has already start.
         pygame.joystick.init()
@@ -85,7 +95,6 @@ class InputHandler():
                         self.inputsPressed[buttonsID] = False
                 except:
                     print("Everything is lava: {0} is not a valid joystick button".format(button))
-        print(pygame.mouse.get_pressed())
         for buttonsID, buttons in self.bindingsMouse.items():
             for button in buttons:
                 try:
@@ -97,8 +106,18 @@ class InputHandler():
                     print("Everything is lava: {0} is not a valid mouse button".format(button))
     
     def checkHold(self, which): #Use this one if you don't care how often the input is being pressed.
+        self.update()
         try:
-            return self.inputsPressed[which]
+            for key in self.bindingsKeyboard[which]:
+                if pygame.key.get_pressed()[key]:
+                    return True
+            for button in self.bindingsJoystick[which]:
+                if self.joystick.get_button(button):
+                    return True
+            for button in self.bindingsMouse[which]:
+                if pygame.mouse.get_pressed()[button]:
+                    return True
+            return False
         except:
             print("Everything is lava: {0} is not a valid input for InputHandler.checkHold()".format(which))
             return False
@@ -106,10 +125,13 @@ class InputHandler():
     def checkPress(self, which): #Use this one if you want to make sure the input has only been pressed once and isn't being held down.
         try:
             if self.inputsPressed[which]:
-                self.inputsPressed[which] = False
-                return True
-            else:
                 return False
+            else:
+                self.update()
+                if self.inputsPressed[which]:
+                    return True
+                else:
+                    return False
         except:
             print("Everything is lava: {0} is not a valid input for InputHandler.checkHold()".format(which))
             return False
