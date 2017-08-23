@@ -139,6 +139,7 @@ class GameClient():
         self.cast = False # Flag for when player casts spell.
         self.status_time = 0
         me = self.players.me
+        first_time = False
         inputHandler = InputHandler() #Handles the inputs. They can get stage fright sometimes.
 
         if me.mute == "False":
@@ -183,7 +184,6 @@ class GameClient():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
                             running = False
                             break
-                    inputHandler.update()
                     if inputHandler.checkPress("start"):
                         pass #Pause menu will be activated here once we readd it
                     elif inputHandler.checkHold("up"):
@@ -204,9 +204,9 @@ class GameClient():
                         self.toMove = True
                     elif inputHandler.checkPress("change"):
                         me.change_spell()
-                    elif inputHandler.checkHold("enter"):
-                        if me.can_fire_ability:
-                            self.cast = me.attack(last_direction)
+                    #elif inputHandler.checkHold("enter"):
+                    #    if me.can_fire_ability:
+                    #        self.cast = me.attack(last_direction)
                     elif inputHandler.checkPress("special") and me.can_step_ability:
                         me.step = 2
                         me.steptime = time.time()
