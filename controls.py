@@ -66,60 +66,35 @@ class InputHandler():
             except:
                 print(client.error_message + ": Tried to reset an input's timeout, but it was " + str(which) + " and not a valid input")
     
-    def update(self, event): #Run this every frame with the event from `for event in pygame.event.get():` so that the InputHandler knows what's going on.
-        if event.type == pygame.locals.KEYDOWN:
-            for keysID, keys in self.bindingsKeyboard.items():
-                if event.key in keys:
-                    self.inputsPressed[keysID] = ("key",event.key)
-            pygame.event.clear(pygame.locals.KEYDOWN)
-        elif event.type == pygame.locals.JOYBUTTONDOWN:
-            for keysID, keys in self.bindingsJoystick.items():
-                if event.button in keys:
-                    self.inputsPressed[keysID] = ("button",event.button)
-            pygame.event.clear(pygame.locals.JOYBUTTONDOWN)
-        elif event.type == pygame.locals.JOYAXISMOTION:
-            if event.axis == 0: #X axis
-                if event.value > 0:
-                    self.inputsPressed["right"] = ("axis",event.axis)
-                elif event.value < 0:
-                    self.inputsPressed["left"] = ("axis",event.axis)
-                else:
-                    if self.inputsPressed["right"] == ("axis",event.axis):
-                        self.inputsPressed["right"] = False
-                    if self.inputsPressed["left"] == ("axis",event.axis):
-                        self.inputsPressed["left"] = False
-            elif event.axis == 1: #Y axis
-                if event.value > 0:
-                    self.inputsPressed["down"] = ("axis",event.axis)
-                elif event.value < 0:
-                    self.inputsPressed["up"] = ("axis",event.axis)
-                else:
-                    if self.inputsPressed["down"] == ("axis",event.axis):
-                        self.inputsPressed["down"] = False
-                    if self.inputsPressed["up"] == ("axis",event.axis):
-                        self.inputsPressed["up"] = False
-            pygame.event.clear(pygame.locals.JOYAXISMOTION)
-        elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-            for keysID, keys in self.bindingsMouse.items():
-                if event.button in keys:
-                    self.inputsPressed[keysID] = ("mouse",event.button)
-            pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
-        elif event.type == pygame.locals.KEYUP:
-            for pressed in self.inputsPressed:
-                if self.inputsPressed[pressed] == ("key",event.key):
-                    self.inputsPressed[pressed] = False
-            pygame.event.clear(pygame.locals.KEYUP)
-        elif event.type == pygame.locals.JOYBUTTONUP:
-            for pressed in self.inputsPressed:
-                if self.inputsPressed[pressed] == ("button",event.button):
-                    self.inputsPressed[pressed] = False
-            pygame.event.clear(pygame.locals.JOYBUTTONUP)
-        elif event.type == pygame.locals.MOUSEBUTTONUP:
-            for pressed in self.inputsPressed:
-                if self.inputsPressed[pressed] == ("mouse",event.button):
-                    self.inputsPressed[pressed] = False
-            pygame.event.clear(pygame.locals.MOUSEBUTTONUP)
-        print(self.inputsPressed)
+    def update(self): #Run this every frame.
+        for keysID, keys in self.bindingsKeyboard.items():
+            for key in keys:
+                try:
+                    if pygame.key.get_pressed()[key]:
+                        self.inputsPressed[keysID] = ("key",key)
+                    elif self.inputsPressed[keysID] == ("key",key):
+                        self.inputsPressed[keysID] = False
+                except:
+                    print("Everything is lava: {0} is not a valid key".format(key))
+        for buttonsID, buttons in self.bindingsJoystick.items():
+            for button in buttons:
+                try:
+                    if self.joystick.get_button(button):
+                        self.inputsPressed[buttonsID] = ("button",button)
+                    elif self.inputsPressed[buttonsID] == ("button",button):
+                        self.inputsPressed[buttonsID] = False
+                except:
+                    print("Everything is lava: {0} is not a valid joystick button".format(button))
+        print(pygame.mouse.get_pressed())
+        for buttonsID, buttons in self.bindingsMouse.items():
+            for button in buttons:
+                try:
+                    if pygame.mouse.get_pressed()[button]:
+                        self.inputsPressed[buttonsID] = ("mouse",button)
+                    elif self.inputsPressed[buttonsID] == ("mouse",button):
+                        self.inputsPressed[buttonsID] = False
+                except:
+                    print("Everything is lava: {0} is not a valid mouse button".format(button))
     
     def checkHold(self, which): #Use this one if you don't care how often the input is being pressed.
         try:

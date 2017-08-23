@@ -183,34 +183,34 @@ class GameClient():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
                             running = False
                             break
-                        inputHandler.update(event)
-                        if inputHandler.checkPress("start"):
-                            pass #Pause menu will be activated here once we readd it
-                        elif inputHandler.checkHold("up"):
-                            me.move(Movement.UP)
-                            last_direction = Movement.UP
-                            self.toMove = True
-                        elif inputHandler.checkHold("down"):
-                            me.move(Movement.DOWN)
-                            last_direction = Movement.DOWN
-                            self.toMove = True
-                        elif inputHandler.checkHold("left"):
-                            me.move(Movement.LEFT)
-                            last_direction = Movement.LEFT
-                            self.toMove = True
-                        elif inputHandler.checkHold("right"):
-                            me.move(Movement.RIGHT)
-                            last_direction = Movement.RIGHT
-                            self.toMove = True
-                        elif inputHandler.checkPress("change"):
-                            me.change_spell()
-                        elif inputHandler.checkHold("enter"):
-                            if me.can_fire_ability:
-                                self.cast = me.attack(last_direction)
-                        elif inputHandler.checkPress("special") and me.can_step_ability:
-                            me.step = 2
-                            me.steptime = time.time()
-                            me.can_step_ability = False
+                    inputHandler.update()
+                    if inputHandler.checkPress("start"):
+                        pass #Pause menu will be activated here once we readd it
+                    elif inputHandler.checkHold("up"):
+                        me.move(Movement.UP)
+                        last_direction = Movement.UP
+                        self.toMove = True
+                    elif inputHandler.checkHold("down"):
+                        me.move(Movement.DOWN)
+                        last_direction = Movement.DOWN
+                        self.toMove = True
+                    elif inputHandler.checkHold("left"):
+                        me.move(Movement.LEFT)
+                        last_direction = Movement.LEFT
+                        self.toMove = True
+                    elif inputHandler.checkHold("right"):
+                        me.move(Movement.RIGHT)
+                        last_direction = Movement.RIGHT
+                        self.toMove = True
+                    elif inputHandler.checkPress("change"):
+                        me.change_spell()
+                    elif inputHandler.checkHold("enter"):
+                        if me.can_fire_ability:
+                            self.cast = me.attack(last_direction)
+                    elif inputHandler.checkPress("special") and me.can_step_ability:
+                        me.step = 2
+                        me.steptime = time.time()
+                        me.can_step_ability = False
 
                     if self.cast == True:
                         me.can_fire_ability = False
