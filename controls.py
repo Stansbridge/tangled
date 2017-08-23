@@ -34,6 +34,16 @@ class InputHandler():
                             "special":[],
                             "start":[],
                             "select":[]}
+        self.bindingsAxis = {"up":[(1,"-")],
+                            "down":[(1,"+")],
+                            "left":[(0,"-")],
+                            "right":[(0,"+")],
+                            "enter":[],
+                            "back":[],
+                            "change":[],
+                            "special":[],
+                            "start":[],
+                            "select":[]}
         self.inputsPressed = {"up":False,
                             "down":False,
                             "left":False,
@@ -73,6 +83,10 @@ class InputHandler():
             joystick.init()
         if pygame.joystick.get_count() > 0:
             self.joystick = pygame.joystick.Joystick(0)
+        self.axesNeutral = []
+        for axis in range(0, self.joystick.get_numaxes()):
+            self.axesNeutral.append(self.joystick.get_axis(axis))
+        print(self.axesNeutral)
     
     def resetTimeout(self, which): #Call this when you're done with a custom timeout and want to reset it back to the default. You should do this any time the game changes state.
         if which == "all":
@@ -107,6 +121,12 @@ class InputHandler():
         for button in self.bindingsMouse[which]:
             if pygame.mouse.get_pressed()[button]:
                 return True
+        for axes in self.bindingsAxis[which]:
+            if axes[1] == "+" and self.joystick.get_axis(axes[0]) > self.axesNeutral[axes[0]]:
+                return True
+            elif axes[1] == "-" and self.joystick.get_axis(axes[0]) < self.axesNeutral[axes[0]]:
+                return True
+        return False
     
     def checkHold(self, which): #Use this one if you don't care how often the input is being pressed.
         if self.inputsTimeout[which]:
