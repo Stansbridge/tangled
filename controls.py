@@ -98,9 +98,12 @@ class InputHandler():
             except:
                 print("Everything is lava: {0} is not a valid input for InputHandler.reloadTimeout()".format(which))
     
-    def setTimeout(self, which, timeout):
+    def setTimeout(self, which, timeout): #Call this to set a new custom timeout.
         if which == "all":
             for put in self.inputsTimeout:
+                self.inputsTimeout[put] = timeout
+        elif which == "move":
+            for put in ["up","down","left","right"]:
                 self.inputsTimeout[put] = timeout
         else:
             #try:
@@ -108,7 +111,7 @@ class InputHandler():
             #except:
             #    print("Everything is lava: {0} is not a valid input for InputHandler.setTimeout()".format(which))
     
-    def resetTimer(self, which):
+    def resetTimer(self, which): #For internal use only.
         self.inputsTimer[which] = time.time() + self.inputsTimeout[which]
     
     def inputCheck(self, which): #For internal use only.
@@ -128,7 +131,7 @@ class InputHandler():
                 return True
         return False
     
-    def checkHold(self, which): #Use this one if you don't care how often the input is being pressed.
+    def checkHold(self, which): #Use this one if you just want to know if it's being pressed, or if you want to have a cooldown on this input.
         if self.inputsTimeout[which]:
             if self.inputsTimer[which] < time.time():
                 if self.inputCheck(which):
@@ -142,7 +145,7 @@ class InputHandler():
             return self.inputCheck(which)
         return False
     
-    def checkPress(self, which): #Use this one if you want to make sure the input has only been pressed once and isn't being held down.
+    def checkPress(self, which): #Use this one if you want to make sure the input has only been pressed once and isn't being held down. Note that this ignores timeouts.
         if not self.inputsPressed[which]:
             if self.inputCheck(which):
                 self.inputsPressed[which] = True

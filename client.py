@@ -52,6 +52,7 @@ for path in projectile_paths:
     projectile_images.append(pygame.image.load(path))
 
 error_message = "Everything is lava"
+move_delay = 0.075
 
 class GameState(Enum):
     MENU = 0
@@ -173,6 +174,8 @@ class GameClient():
                     if not inputHandler.inputsTimeout["change"]:
                         inputHandler.setTimeout("change", 0.5)
                         inputHandler.setTimeout("enter", 0.5)
+                        inputHandler.setTimeout("special", 10)
+                        inputHandler.setTimeout("move", move_delay)
                     if inputHandler.checkPress("start"):
                         pass #Pause menu will be activated here once we readd it
                     elif inputHandler.checkHold("up"):
@@ -195,26 +198,20 @@ class GameClient():
                         me.change_spell()
                     elif inputHandler.checkHold("enter"):
                         self.cast = me.attack(last_direction)
-                    elif inputHandler.checkPress("special") and me.can_step_ability:
+                    elif inputHandler.checkHold("special"):
                         me.step = 2
                         me.steptime = time.time()
-                        me.can_step_ability = False
 
-                    if time.time() - me.steptime >30:
-                        me.can_step_ability = True
-                    elif time.time() - me.steptime >3:
+                    if me.map.level.get_tile(me.x,me.y).has_attribute(TileAttribute.SWIM):
+                        inputHandler.setTimeout("move", 0.4)
+                    elif me.map.level.get_tile(me.x,me.y).has_attribute(TileAttribute.SLOW):
+                        inputHandler.setTimeout("move", 0.2)
+                    else:
+                        inputHandler.setTimeout("move", move_delay)
+                    
+                    if time.time() - me.steptime > 3:
                         me.step = 1
-
-                    if time.time() - me.switch_time > 0.1:
-                        me.can_switch_spell = True
-
-                    if time.time() - me.swim_timer > 0.3:
-                        me.can_swim = True
-                    if time.time() - me.sand_timer > 0.1:
-                        me.can_sand = True
-                    if time.time() - me.move_timer > 0.075:
-                        me.can_move = True
-
+                    
                     self.map.render()
                     for flag in self.flags.values():
                         flag.render()
