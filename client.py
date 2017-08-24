@@ -24,15 +24,11 @@ from level import SaveLevel
 from tile import Tileset
 from music import LevelMusic
 from controls import InputHandler
-
-white = (255,255,255)
-black = (0,0,0)
-red = (255, 0, 0)
+from resources import *
 
 width = 1024
 height = 1024
 
-font = 'assets/fonts/alterebro-pixel-font.ttf'
 level_tileset_path = 'assets/tilesets/main.png'
 player_animation_tileset_path = 'assets/tilesets/player.png'
 red_flag = "assets/tilesets/Red Flag.png"
@@ -170,7 +166,7 @@ class GameClient():
 
         try:
             while running:
-                self.screen.fill((white))
+                self.screen.fill(colours["white"])
                 clock.tick(tickspeed)
                 
                 if self.state == "menu":
@@ -363,11 +359,11 @@ class GameClient():
 
                     score_shift = 220
                     for team, score in self.scores.items():
-                        colour = (0, 0, 200) if team == 'blue' else (200, 0, 0)
+                        colour = colours[team]
                         display_rect = Rect((score_shift, 0), (200, 75))
 
-                        typeface = self.menu_current.fonts['large']
-                        score_text = typeface.render(str(score), False, (255, 255, 255))
+                        typeface = fonts['large']
+                        score_text = typeface.render(str(score), False, colours["white"])
 
                         text_bounds = score_text.get_rect()
                         text_bounds.center = display_rect.center
@@ -378,11 +374,11 @@ class GameClient():
                         score_shift += 200
 
                     if time.time() - self.status_time < 5:
-                        typeface = self.menu.fonts['large']
-                        status_text = typeface.render(self.status_message, False, (255, 255, 255))
+                        typeface = fonts['large']
+                        status_text = typeface.render(self.status_message, False, colours["white"])
                         text_bounds = status_text.get_rect()
                         text_bounds.center = self.screen.get_rect().center
-                        pygame.draw.rect(self.screen, (0, 0, 0), text_bounds)
+                        pygame.draw.rect(self.screen, colours["black"], text_bounds)
                         self.screen.blit(status_text, text_bounds.topleft)
 
                     self.players.minimap_render(self.screen)

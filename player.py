@@ -5,6 +5,7 @@ from uuid import UUID
 import random
 import pygame
 import configparser
+import time
 
 from pygame.rect import Rect
 
@@ -15,7 +16,7 @@ from level import Place
 import map as map_module
 from tile import TileAttribute
 from tile import TileType
-import time
+from resources import *
 
 class Movement(Enum):
     UP = 1
@@ -166,9 +167,9 @@ class Player():
 
     def hudRender(self):
         font = pygame.font.Font(client.font, 30)
-        mana = font.render("Mana: "+str(self.mana)+"/100", False, (255,255,255))
-        health = font.render("Health: "+str(self.health)+"/100", False, (255,255,255))
-        spell = font.render("Current Spell: "+str(Action.get_action(self.current_spell))[7:], False, (255,255,255)) # Removes first 7 characters off enum as we dont need them.
+        mana = font.render("Mana: "+str(self.mana)+"/100", False, colours["white"])
+        health = font.render("Health: "+str(self.health)+"/100", False, colours["white"])
+        spell = font.render("Current Spell: "+str(Action.get_action(self.current_spell))[7:], False, colours["white"]) # Removes first 7 characters off enum as we dont need them.
         hudObjects = [mana.get_width(), health.get_width(), spell.get_width()]
         rect = pygame.Surface((max(hudObjects) + 20, 75), pygame.SRCALPHA, 32)
         rect.fill((0,0,0, 255))
@@ -180,13 +181,13 @@ class Player():
     def render(self, isMe = False):
         font = self.font
 
-        name_tag_colour = (255, 255, 255)
+        name_tag_colour = colours["white"]
         if self.team:
             if self.team == "blue":
-                name_tag_colour = (0, 191, 255)
+                name_tag_colour = colours["blue"]
                 self.tileset = self.blue_tileset
             elif self.team == "red":
-                name_tag_colour = (255, 0, 0)
+                name_tag_colour = colours["red"]
                 self.tileset = self.red_tileset
 
         name_tag = font.render(self.name, False, name_tag_colour)
@@ -260,12 +261,12 @@ class Player():
         if not self.ready:
             self.__raiseNoPosition()
 
-        c = (255,255,255)
+        c = colours["white"]
         if self.team:
             if self.team == "blue":
                 c = (0, 0, 255)
             elif self.team == "red":
-                c = (255, 0, 0)
+                c = colours["red"]
 
         tmp_x = 0
         tmp_y = 0
@@ -331,7 +332,7 @@ class Player():
     def set_team(self, team):
         self.team = team
 
-    def add_particle(self,amount, position, colour=(255,255,255), size=3, velocity=None, gravity=(0,0), life=40, metadata=0,grow=0):
+    def add_particle(self,amount, position, colour=colours["white"], size=3, velocity=None, gravity=(0,0), life=40, metadata=0,grow=0):
         for i in range(amount):
             if(len(self.particle_list) >= self.particle_limit):
                 self.remove_particle(self.particle_list[0])
@@ -500,7 +501,7 @@ class PlayerManager():
         tempothers = self.others
         tempothers["temp_uuid"] = self.me
         for playerUUID, player in tempothers.items():
-            color = (255, 255, 255)
+            color = colours["white"]
             if player.team == "red":
                 color = (255,0,0)
             elif player.team == "blue":
