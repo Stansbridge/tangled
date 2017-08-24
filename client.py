@@ -23,6 +23,7 @@ from screen import MainMenu
 from level import SaveLevel
 from tile import Tileset
 from music import LevelMusic
+from controls import InputHandler
 
 white = (255,255,255)
 black = (0,0,0)
@@ -50,10 +51,8 @@ projectile_images = []
 for path in projectile_paths:
     projectile_images.append(pygame.image.load(path))
 
-buttons = {"A":1, "B":2, "X":0, "Y":3, "L":4, "R":5, "Start":9, "Select":8} #Use these for the PiHut SNES controller
-#buttons = {"A":0, "B":1, "X":2, "Y":3, "L":4, "R":5, "Start":7, "Select":6} #Use these for the iBuffalo SNES controller
-
 error_message = "Everything is lava"
+move_delay = 0.075
 
 class GameState(Enum):
     MENU = 0
@@ -97,12 +96,6 @@ class GameClient():
         # Initialise music
         pygame.mixer.init()
 
-        # Initialise the joystick.
-        pygame.joystick.init()
-        joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-        for joystick in joysticks:
-            joystick.init()
-
         pygame.event.set_allowed(None)
         pygame.event.set_allowed([pygame.locals.QUIT,
             pygame.locals.JOYAXISMOTION,
@@ -138,6 +131,7 @@ class GameClient():
         self.cast = False # Flag for when player casts spell.
         self.status_time = 0
         me = self.players.me
+        inputHandler = InputHandler() #Handles the inputs. They can get stage fright sometimes.
 
         if me.mute == "False":
             LevelMusic.play_music_repeat()
@@ -146,7 +140,7 @@ class GameClient():
             while running:
                 self.screen.fill((white))
                 clock.tick(tickspeed)
-
+                
                 if(self.game_state.value == GameState.MENU.value):
                     self.menu.render((self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4))
                     for event in pygame.event.get():
@@ -170,151 +164,54 @@ class GameClient():
                         LevelMusic.play_music_repeat()
                     self.game_state = GameState.MENU
                 else:
-                    # handle inputs
+                    #Handle movement.
                     if last_direction == None:
                         last_direction = Movement.DOWN
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
                             running = False
                             break
-                        elif event.type == pygame.locals.KEYDOWN and event.key == pygame.locals.K_ESCAPE:
-                            self.set_state(GameState.MENU)
-                        elif event.type == pygame.locals.KEYDOWN:
-                            if event.key == pygame.locals.K_UP or event.key == pygame.locals.K_w:
-                                me.move(Movement.UP)
-                                last_direction = Movement.UP
-                                self.toMove = True
-                            elif event.key == pygame.locals.K_DOWN or event.key == pygame.locals.K_s:
-                                me.move(Movement.DOWN)
-                                last_direction = Movement.DOWN
-                                self.toMove = True
-                            elif event.key == pygame.locals.K_LEFT or event.key == pygame.locals.K_a:
-                                me.move(Movement.LEFT)
-                                last_direction = Movement.LEFT
-                                self.toMove = True
-                            elif event.key == pygame.locals.K_RIGHT or event.key == pygame.locals.K_d:
-                                me.move(Movement.RIGHT)
-                                last_direction = Movement.RIGHT
-                                self.toMove = True
-                            elif event.key == pygame.locals.K_e:
-                                me.change_spell()
-                            elif event.key == pygame.locals.K_RETURN or event.key == pygame.locals.K_SPACE :
-                                if me.can_fire_ability:
-                                    self.cast = me.attack(last_direction)
+                    if not inputHandler.inputsTimeout["change"]:
+                        inputHandler.setTimeout("change", 0.5)
+                        inputHandler.setTimeout("enter", 0.5)
+                        inputHandler.setTimeout("special", 10)
+                        inputHandler.setTimeout("move", move_delay)
+                    if inputHandler.checkPress("start"):
+                        pass #Pause menu will be activated here once we readd it
+                    elif inputHandler.checkHold("up"):
+                        me.move(Movement.UP)
+                        last_direction = Movement.UP
+                        self.toMove = True
+                    elif inputHandler.checkHold("down"):
+                        me.move(Movement.DOWN)
+                        last_direction = Movement.DOWN
+                        self.toMove = True
+                    elif inputHandler.checkHold("left"):
+                        me.move(Movement.LEFT)
+                        last_direction = Movement.LEFT
+                        self.toMove = True
+                    elif inputHandler.checkHold("right"):
+                        me.move(Movement.RIGHT)
+                        last_direction = Movement.RIGHT
+                        self.toMove = True
+                    elif inputHandler.checkPress("change"):
+                        me.change_spell()
+                    elif inputHandler.checkHold("enter"):
+                        self.cast = me.attack(last_direction)
+                    elif inputHandler.checkHold("special"):
+                        me.step = 2
+                        me.steptime = time.time()
 
-                            if event.key == pygame.locals.K_r and me.can_step_ability:
-                                me.step = 2
-                                me.steptime = time.time()
-                                me.can_step_ability = False
-
-                            if event.key == pygame.locals.K_q:
-                                if me.can_switch_spell:
-                                    me.change_spell()
-                                    me.switch_time = time.time()
-                                    me.can_switch_spell = False
-
-                            pygame.event.clear(pygame.locals.KEYDOWN)
-
-                    if event.type == pygame.locals.MOUSEBUTTONDOWN:
-                        if event.button == 0:
-                            if me.can_fire_ability:
-                                self.cast = me.attack(last_direction)
-                            pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
-                        if event.button == 4 or event.button == 5:
-                            if me.can_switch_spell:
-                                me.change_spell()
-                                me.switch_time = time.time()
-                                me.can_switch_spell = False
-                                pygame.event.clear(pygame.locals.MOUSEBUTTONDOWN)
-
-                    # https://stackoverflow.com/a/15596758/3954432
-                    # Handle controller input by setting flags (move, neutral)
-                    # and using timers (delay, pressed).
-                    # Move if pressed timer is greater than delay.
-                    if(pygame.joystick.get_count() > 0 and not me.name.startswith("windows") and not self.toMove):
-                        joystick = pygame.joystick.Joystick(0)
-                        move = False
-                        delay = 100
-                        neutral = True
-                        pressed = 0
-                        last_update = pygame.time.get_ticks()
-                        y_axis = joystick.get_axis(1)
-                        x_axis = joystick.get_axis(0)
-
-                        if y_axis == 0 and x_axis == 0: #Indicates no motion.
-                            neutral = True
-                            pressed = 0
-                        else:
-                            if neutral:
-                                move = True
-                                neutral = False
-                            else:
-                                pressed += pygame.time.get_ticks() - last_update
-                        if pressed > delay:
-                            move = True
-                            pressed -= delay
-                        if move:
-                            # up/down
-                            if y_axis > 0.5:
-                                me.move(Movement.DOWN)
-                                last_direction = Movement.DOWN
-                                self.toMove = True
-                            if y_axis < -0.5:
-                                me.move(Movement.UP)
-                                last_direction = Movement.UP
-                                self.toMove = True
-                            # left/right
-                            if x_axis > 0.5:
-                                me.move(Movement.RIGHT)
-                                last_direction = Movement.RIGHT
-                                self.toMove = True
-                            if x_axis < -0.5:
-                                me.move(Movement.LEFT)
-                                last_direction = Movement.LEFT
-                                self.toMove = True
-
-                        #Shoot
-                        if joystick.get_button(buttons["R"]) or joystick.get_button(buttons["A"]):
-                            if me.can_fire_ability:
-                                self.cast = me.attack(last_direction)
-                        #Menu
-                        if joystick.get_button(buttons["Start"]) or joystick.get_button(buttons["Select"]):
-                            self.set_state(GameState.MENU)
-                        #Speed boost
-                        if joystick.get_button(buttons["X"]) and me.can_step_ability:
-                            me.step = 2
-                            me.steptime = time.time()
-                            me.can_step_ability = False
-                        #Change spell
-                        if joystick.get_button(buttons["L"]):
-                            if me.can_switch_spell:
-                                me.change_spell()
-                                me.switch_time = time.time()
-                                me.can_switch_spell = False
-
-                        last_update = pygame.time.get_ticks()
-
-                    if self.cast == True:
-                        me.can_fire_ability = False
-                        me.firetime = time.time()
-                    elif time.time() - me.firetime > 0.5:
-                        me.can_fire_ability = True
-
-                    if time.time() - me.steptime >30:
-                        me.can_step_ability = True
-                    elif time.time() - me.steptime >3:
+                    if me.map.level.get_tile(me.x,me.y).has_attribute(TileAttribute.SWIM):
+                        inputHandler.setTimeout("move", 0.4)
+                    elif me.map.level.get_tile(me.x,me.y).has_attribute(TileAttribute.SLOW):
+                        inputHandler.setTimeout("move", 0.2)
+                    else:
+                        inputHandler.setTimeout("move", move_delay)
+                    
+                    if time.time() - me.steptime > 3:
                         me.step = 1
-
-                    if time.time() - me.switch_time > 0.1:
-                        me.can_switch_spell = True
-
-                    if time.time() - me.swim_timer > 0.3:
-                        me.can_swim = True
-                    if time.time() - me.sand_timer > 0.1:
-                        me.can_sand = True
-                    if time.time() - me.move_timer > 0.075:
-                        me.can_move = True
-
+                    
                     self.map.render()
                     for flag in self.flags.values():
                         flag.render()
@@ -407,7 +304,10 @@ class GameClient():
                         self.network.node.shout("world:position", bson.dumps(me.get_position()._asdict()))
                         self.toMove = False
                     if self.cast == True:
-                        self.network.node.shout("world:combat", bson.dumps(me.cast_spells[-1].get_properties()._asdict()))
+                        try:
+                            self.network.node.shout("world:combat", bson.dumps(me.cast_spells[-1].get_properties()._asdict()))
+                        except:
+                            print(error_message + ": me.cast_spells is empty")
                         self.cast = False
 
 
