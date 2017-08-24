@@ -130,7 +130,7 @@ class GameClient():
                             None)
         self.menu_ctf_controls = Menu(self.screen,
                             "Capture the Code: Control bindings",
-                            {"Reload joysticks":{"desc":"Try refreshing if your gamepad isn't responding", "action":None, "pos":0}},
+                            {"Reload joysticks":{"desc":"Try this if your controller isn't responding", "action":"rejoy", "pos":0}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
         self.menu_ctf_main = Menu(self.screen,
@@ -193,6 +193,8 @@ class GameClient():
                             break
                         elif action == "play_ctf":
                             self.state = "game_ctf"
+                        elif action == "rejoy":
+                            inputHandler.reloadJoysticks()
 
                 elif self.state == "game_ctf": #There may only be one game at the moment, but this makes it easier to add different game types in the future.
                     #This means we have to actually run the game.
