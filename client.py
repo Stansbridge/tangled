@@ -123,22 +123,22 @@ class GameClient():
 
     def menu_setup(self):
         self.menu_ctf_join = Menu(self.screen,
-                            "Join a game",
+                            "Capture the Code: Join a game",
                             {"RARY":{"desc":"TEMPO", "action":"play_ctf", "pos":0}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
         self.menu_ctf_host = Menu(self.screen,
-                            "Host a game",
+                            "Capture the Code: Host a game",
                             {"RARY":{"desc":"TEMPO", "action":None, "pos":0}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
         self.menu_ctf_controls = Menu(self.screen,
-                            "Set control bindings",
+                            "Capture the Code: Control bindings",
                             {"RARY":{"desc":"TEMPO", "action":None, "pos":0}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
         self.menu_ctf_main = Menu(self.screen,
-                            "Capture the Code: MAIN MENU",
+                            "Capture the Code: Main menu",
                             {"Join game":{"desc":"Join an existing lobby", "action":self.menu_ctf_join, "pos":0},
                             "Host game":{"desc":"Host a game lobby", "action":self.menu_ctf_host, "pos":1},
                             "Controls":{"desc":"Edit control bindings", "action":self.menu_ctf_controls, "pos":2},
