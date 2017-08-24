@@ -83,9 +83,10 @@ class InputHandler():
             joystick.init()
         if pygame.joystick.get_count() > 0:
             self.joystick = pygame.joystick.Joystick(0)
-        self.axesNeutral = []
-        for axis in range(0, self.joystick.get_numaxes()):
-            self.axesNeutral.append(self.joystick.get_axis(axis))
+        if self.joystick:
+            self.axesNeutral = []
+            for axis in range(0, self.joystick.get_numaxes()):
+                self.axesNeutral.append(self.joystick.get_axis(axis))
     
     def resetTimeout(self, which): #Call this when you're done with a custom timeout and want to reset it back to the default. You should do this any time the game changes state.
         if which == "all":
@@ -117,16 +118,17 @@ class InputHandler():
         for key in self.bindingsKeyboard[which]:
             if pygame.key.get_pressed()[key]:
                 return True
-        for button in self.bindingsJoystick[which]:
-            if self.joystick.get_button(button):
-                return True
+        if self.joystick:
+            for button in self.bindingsJoystick[which]:
+                if self.joystick.get_button(button):
+                    return True
+            for axes in self.bindingsAxis[which]:
+                if axes[1] == "+" and self.joystick.get_axis(axes[0]) > self.axesNeutral[axes[0]]:
+                    return True
+                elif axes[1] == "-" and self.joystick.get_axis(axes[0]) < self.axesNeutral[axes[0]]:
+                    return True
         for button in self.bindingsMouse[which]:
             if pygame.mouse.get_pressed()[button]:
-                return True
-        for axes in self.bindingsAxis[which]:
-            if axes[1] == "+" and self.joystick.get_axis(axes[0]) > self.axesNeutral[axes[0]]:
-                return True
-            elif axes[1] == "-" and self.joystick.get_axis(axes[0]) < self.axesNeutral[axes[0]]:
                 return True
         return False
     

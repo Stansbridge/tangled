@@ -130,7 +130,7 @@ class GameClient():
                             None)
         self.menu_ctf_controls = Menu(self.screen,
                             "Capture the Code: Control bindings",
-                            {"RARY":{"desc":"TEMPO", "action":None, "pos":0}},
+                            {"Reload joysticks":{"desc":"Try refreshing if your gamepad isn't responding", "action":None, "pos":0}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
         self.menu_ctf_main = Menu(self.screen,
