@@ -86,7 +86,6 @@ class InputHandler():
         self.axesNeutral = []
         for axis in range(0, self.joystick.get_numaxes()):
             self.axesNeutral.append(self.joystick.get_axis(axis))
-        print(self.axesNeutral)
     
     def resetTimeout(self, which): #Call this when you're done with a custom timeout and want to reset it back to the default. You should do this any time the game changes state.
         if which == "all":

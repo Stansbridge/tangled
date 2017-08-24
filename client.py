@@ -19,7 +19,7 @@ from map import *
 from network import Network
 from player import *
 from sprite import *
-from screen import MainMenu
+from menu import *
 from level import SaveLevel
 from tile import Tileset
 from music import LevelMusic
@@ -84,7 +84,6 @@ class GameClient():
             "blue": 0
         }
         self.map.set_centre_player(self.players.me)
-        self.menu = MainMenu(self.screen, self.players)
 
     def setup_pygame(self):
         # Initialise screen/display
@@ -122,6 +121,36 @@ class GameClient():
             else:
                 pygame.key.set_repeat(0, 0)
 
+    def menu_setup(self):
+        self.menu_ctf_join = Menu(self.screen,
+                            "Join a game",
+                            {"RARY":{"desc":"TEMPO", "action":"play_ctf", "pos":0}},
+                            (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
+                            None)
+        self.menu_ctf_host = Menu(self.screen,
+                            "Host a game",
+                            {"RARY":{"desc":"TEMPO", "action":None, "pos":0}},
+                            (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
+                            None)
+        self.menu_ctf_controls = Menu(self.screen,
+                            "Set control bindings",
+                            {"RARY":{"desc":"TEMPO", "action":None, "pos":0}},
+                            (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
+                            None)
+        self.menu_ctf_main = Menu(self.screen,
+                            "Capture the Code: MAIN MENU",
+                            {"Join game":{"desc":"Join an existing lobby", "action":self.menu_ctf_join, "pos":0},
+                            "Host game":{"desc":"Host a game lobby", "action":self.menu_ctf_host, "pos":1},
+                            "Controls":{"desc":"Edit control bindings", "action":self.menu_ctf_controls, "pos":2},
+                            "Help":{"desc":"Visit the wiki", "action":"help", "pos":3},
+                            "Mute":{"desc":"Toggle game sounds", "action":"mute", "pos":4},
+                            "Quit":{"desc":"Shut it down", "action":"quit", "pos":5}},
+                            (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
+                            None)
+        self.menu_ctf_join.parent = self.menu_ctf_main
+        self.menu_ctf_host.parent = self.menu_ctf_main
+        self.menu_ctf_controls.parent = self.menu_ctf_main
+
     def run(self):
         running = True
         clock = pygame.time.Clock()
@@ -132,6 +161,9 @@ class GameClient():
         self.status_time = 0
         me = self.players.me
         inputHandler = InputHandler() #Handles the inputs. They can get stage fright sometimes.
+        self.menu_setup()
+        self.state = "menu"
+        self.menu_current = self.menu_ctf_main
 
         if me.mute == "False":
             LevelMusic.play_music_repeat()
@@ -141,30 +173,33 @@ class GameClient():
                 self.screen.fill((white))
                 clock.tick(tickspeed)
                 
-                if(self.game_state.value == GameState.MENU.value):
-                    self.menu.render((self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4))
+                if self.state == "menu":
+                    #This means we're in the menus.
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
                             running = False
                             break
+                    action = self.menu_current.update(inputHandler)
+                    if type(action) is Menu:
+                        self.menu_current = action
+                    else:
+                        if action == "help":
+                            webbrowser.open_new_tab("https://github.com/neontribe/untangled-2017/wiki")
+                        elif action == "mute":
+                            if me.mute == "False":
+                                me.set_mute("True", True)
+                                LevelMusic.stop_music()
+                            elif me.mute == "True":
+                                me.set_mute("False", True)
+                                LevelMusic.play_music_repeat()
+                        elif action == "quit":
+                            running = False
+                            break
+                        elif action == "play_ctf":
+                            self.state = "game_ctf"
 
-                        self.set_state(self.menu.update(event))
-                elif(self.game_state.value == GameState.QUIT.value):
-                    running = False
-                    break
-                elif(self.game_state.value == GameState.HELP.value):
-                    webbrowser.open_new_tab("https://github.com/neontribe/untangled-2017/wiki")
-                    self.game_state = GameState.MENU
-                elif(self.game_state.value == GameState.MUTE.value):
-                    if me.mute == "False":
-                        me.set_mute("True", True)
-                        LevelMusic.stop_music()
-                    elif me.mute == "True":
-                        me.set_mute("False", True)
-                        LevelMusic.play_music_repeat()
-                    self.game_state = GameState.MENU
-                else:
-                    #Handle movement.
+                elif self.state == "game_ctf": #There may only be one game at the moment, but this makes it easier to add different game types in the future.
+                    #This means we have to actually run the game.
                     if last_direction == None:
                         last_direction = Movement.DOWN
                     for event in pygame.event.get():
@@ -177,7 +212,7 @@ class GameClient():
                         inputHandler.setTimeout("special", 10)
                         inputHandler.setTimeout("move", move_delay)
                     if inputHandler.checkPress("start"):
-                        pass #Pause menu will be activated here once we readd it
+                        self.state = "menu" #Temporary workaround until a proper pause menu is added (or possibly not if this works fine).
                     elif inputHandler.checkHold("up"):
                         me.move(Movement.UP)
                         last_direction = Movement.UP
@@ -331,7 +366,7 @@ class GameClient():
                         colour = (0, 0, 200) if team == 'blue' else (200, 0, 0)
                         display_rect = Rect((score_shift, 0), (200, 75))
 
-                        typeface = self.menu.fonts['large']
+                        typeface = self.menu_current.fonts['large']
                         score_text = typeface.render(str(score), False, (255, 255, 255))
 
                         text_bounds = score_text.get_rect()
