@@ -51,6 +51,7 @@ for path in projectile_paths:
 
 error_message = "Everything is lava"
 move_delay = 0.075
+PING_TIMEOUT = 5
 
 class GameState(Enum):
     MENU = 0
@@ -82,6 +83,9 @@ class GameClient():
             "blue": 0
         }
         self.map.set_centre_player(self.players.me)
+        
+        self.authority_exists = False
+        self.ping_timer = 0
 
     def setup_pygame(self):
         # Initialise screen/display
@@ -110,14 +114,27 @@ class GameClient():
         )
         self.map.music.load_music()
 
-    def set_state(self, new_state):
-        if(new_state and new_state != self.game_state):
-            self.game_state = new_state
-
-            if(self.game_state.value == GameState.PLAY.value):
-                pygame.key.set_repeat(50, 50)
-            else:
-                pygame.key.set_repeat(0, 0)
+    def authority_check(self, event = None):
+        if self.ping_timer < time.time():
+            if event:
+                if event.headers.get("AUTHORITY") == "TRUE":
+                    self.authority_exists = True
+                    self.ping_timer = time.time() + PING_TIMEOUT
+                    return True
+            self.network.node.shout("server:ping", bson.dumps({})) #Hopefully we'll catch it next time around?
+            try:
+                for event in self.network.get_events():
+                    if event.headers.get("AUTHORITY") == "TRUE":
+                        self.authority_exists = True
+                        self.ping_timer = time.time() + PING_TIMEOUT
+                        return True
+            except:
+                pass
+            self.authority_exists = False
+            self.ping_timer = time.time() + PING_TIMEOUT
+            return False
+        else:
+            return self.authority_exists
 
     def menu_setup(self):
         self.menu_ctf_join = Menu(self.screen,
@@ -174,11 +191,10 @@ class GameClient():
         self.cast = False # Flag for when player casts spell.
         self.status_time = 0
         me = self.players.me
-        inputHandler = InputHandler() #Handles the inputs. They can get stage fright sometimes.
+        inputHandler = InputHandler() #Handles the inputs. This is the only variable trained well enough to be allowed to release the inputs from their cages, so stand back.
         self.menu_setup()
         self.state = "menu"
         self.menu_current = self.menu_main
-        self.host_authority = None
 
         if me.mute == "False":
             LevelMusic.play_music_repeat()
@@ -190,12 +206,22 @@ class GameClient():
                 
                 if self.state == "menu":
                     #This means we're in the menus.
-                    if self.host_authority:
-                        print("???")
-                        self.host_authority.terminate() #Stop the child before things get out of hand.
-                        if not self.host_authority.poll():
-                            print("die child")
-                            self.host_authority.kill() #Kill the child if it's being particularly naughty.
+                    if self.menu_current == self.menu_ctf_main:
+                        try:
+                            for event in self.network.get_events():
+                                print("OH BOY AN EVENT")
+                                if self.authority_check(event):
+                                    if not "Join game" in self.menu_ctf_main.options:
+                                            self.menu_ctf_main.option_add("Join game", "Join an existing lobby", self.menu_ctf_join, 0)
+                                elif "Join game" in self.menu_ctf_main.options:
+                                    self.menu_ctf_main.option_remove("Join game")
+                        except:
+                            if self.authority_check():
+                                if not "Join game" in self.menu_ctf_main.options:
+                                    self.menu_ctf_main.option_add("Join game", "Join an existing lobby", self.menu_ctf_join, 0)
+                            elif "Join game" in self.menu_ctf_main.options:
+                                self.menu_ctf_main.option_remove("Join game")
+                    
                     action = None
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
@@ -225,7 +251,7 @@ class GameClient():
                         elif action == "play_ctf":
                             self.state = "game_ctf"
                         elif action == "host_skirmish_ctf":
-                            self.host_authority = subprocess.Popen(["./authority_ctf.sh"])
+                            
                             self.state = "game_ctf"
                         elif action == "rejoy":
                             inputHandler.reloadJoysticks()
@@ -248,10 +274,6 @@ class GameClient():
                         inputHandler.setTimeout("special", 10)
                         inputHandler.setTimeout("move", move_delay)
                     if inputHandler.checkPress("start"):
-                        if self.host_authority:
-                            self.host_authority.terminate() #Stop the child before things get out of hand.
-                            if not self.host_authority.poll():
-                                self.host_authority.kill() #Kill the child if it's being particularly naughty.
                         self.state = "menu" #Temporary workaround until a proper pause menu is added (or possibly not if this works fine).
                     elif inputHandler.checkHold("up"):
                         me.move(Movement.UP)

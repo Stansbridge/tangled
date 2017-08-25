@@ -47,6 +47,8 @@ class Authority():
         self.node.join("ctf:gotflag")
         self.node.join("ctf:scores")
         self.node.join("ctf:status")
+        self.node.join("server:ping")
+        self.node.join("server:pong")
 
         self.poller = zmq.Poller()
         self.poller.register(self.node.socket(), zmq.POLLIN)
@@ -245,6 +247,11 @@ class Authority():
                             if event.group == 'ctf:gotflags':
                                 flag_info = bson.loads(event.msg[0])
                                 self.set_flags(flag_info)
+                            
+                            if event.group == "server:ping":
+                                print("ping-a-ling")
+                                self.node.shout("server:pong", bson.dumps({}))
+                                
                         elif event.type == 'WHISPER':
                             msg = bson.loads(event.msg[0])
                             network_player = self.players.get(event.peer_uuid)

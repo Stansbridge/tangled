@@ -17,6 +17,8 @@ class Network():
         self.node.join("player:name")
         self.node.join("ctf:scores")
         self.node.join("ctf:status")
+        self.node.join("server:ping")
+        self.node.join("server:pong")
 
         self.poller = zmq.Poller()
         self.poller.register(self.node.socket(), zmq.POLLIN)

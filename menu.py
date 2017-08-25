@@ -21,8 +21,30 @@ class Menu():
         self.option_selected = self.get_option_by_pos(0)
         self.logo = pygame.transform.scale(pygame.image.load("assets/images/logo.jpg"), (700, 200))
     
+    def get_option_by_pos(self, pos):
+        for option in self.options:
+            if self.options[option]["pos"] == pos:
+                return option
+    
     def option_add(self, option, desc, action, pos):
+        for opt in self.options:
+            if self.options[opt["pos"]] == pos:
+                opt = "oh no"
+                break
+        if opt == "oh no":
+            for opt in self.options:
+                if self.options[opt]["pos"] >= pos:
+                    self.options[opt]["pos"] += 1
         self.options[option] = {"desc":desc, "action":action, "pos":pos}
+    
+    def option_remove(self, option):
+        pos = self.options[option]["pos"]
+        self.options.pop(option)
+        for opt in self.options:
+            if self.options[opt]["pos"] > pos:
+                self.options[opt]["pos"] -= 1
+        if self.option_selected == option:
+            self.option_selected = self.get_option_by_pos(pos)
     
     def render_text(self, font, text, pos = (0, 0), colour = colours["black"]):
         rendered_text_surface = font.render(text, False, colour)
@@ -40,12 +62,7 @@ class Menu():
         self.render_text(fonts["heading"], self.title, (self.offset[0] - 320, 120), colours["black"])
         self.pygame_screen.blit(self.logo,(self.offset[0] - 320, 220))
         self.render_text(fonts["small"], self.options[self.option_selected]["desc"], (self.offset[0] - 50, 375), colours["primary"])
-        self.render_options()
-    
-    def get_option_by_pos(self, pos):
-        for option in self.options:
-            if self.options[option]["pos"] == pos:
-                return option
+        self.render_options() 
     
     def update(self, inputHandler):
         if not inputHandler.inputsTimeout["up"] == move_timeout:
@@ -75,9 +92,6 @@ class MenuInput():
         self.ticker = 0.0
         self.char_name = default
         self.logo = pygame.transform.scale(pygame.image.load("assets/images/logo.jpg"), (700, 200))
-    
-    def option_add(self, option, desc, action, pos):
-        self.options[option] = {"desc":desc, "action":action, "pos":pos}
     
     def render_text(self, font, text, pos = (0, 0), colour = colours["black"]):
         rendered_text_surface = font.render(text, False, colour)
