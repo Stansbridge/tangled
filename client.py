@@ -129,7 +129,7 @@ class GameClient():
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
         self.menu_ctf_controls = Menu(self.screen,
-                            "Capture the Code: Control bindings",
+                            "Capture the Code: Control settings",
                             {"Reload joysticks":{"desc":"Try this if your controller isn't responding", "action":"rejoy", "pos":0}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
@@ -146,7 +146,7 @@ class GameClient():
                             {"Join game":{"desc":"Join an existing lobby", "action":self.menu_ctf_join, "pos":0},
                             "Host game":{"desc":"Host a game lobby", "action":self.menu_ctf_host, "pos":1},
                             "Change name":{"desc":"Change your name (visible to others)", "action":self.menu_ctf_name, "pos":2},
-                            "Controls":{"desc":"Edit control bindings", "action":self.menu_ctf_controls, "pos":3},
+                            "Controls":{"desc":"Edit control bindings and settings", "action":self.menu_ctf_controls, "pos":3},
                             "Help":{"desc":"Visit the wiki", "action":"help", "pos":4},
                             "Mute":{"desc":"Toggle game sounds", "action":"mute", "pos":5},
                             "Quit":{"desc":"Shut it down", "action":"quit", "pos":6}},
@@ -156,6 +156,12 @@ class GameClient():
         self.menu_ctf_host.parent = self.menu_ctf_main
         self.menu_ctf_controls.parent = self.menu_ctf_main
         self.menu_ctf_name.parent = self.menu_ctf_main
+        self.menu_main = Menu(self.screen,
+                            "Untangled: Select game",
+                            {"Capture the Code":{"desc":"Capture the flag game from Untangled 2017", "action":self.menu_ctf_main, "pos":0}},
+                            (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
+                            None)
+        self.menu_ctf_main.parent = self.menu_main
 
     def run(self):
         running = True
@@ -169,7 +175,7 @@ class GameClient():
         inputHandler = InputHandler() #Handles the inputs. They can get stage fright sometimes.
         self.menu_setup()
         self.state = "menu"
-        self.menu_current = self.menu_ctf_main
+        self.menu_current = self.menu_main
 
         if me.mute == "False":
             LevelMusic.play_music_repeat()
