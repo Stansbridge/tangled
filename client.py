@@ -10,6 +10,7 @@ import pdb
 import bson
 import uuid
 import webbrowser
+import subprocess
 from pyre import Pyre, pyre_event
 from pyre import zhelper
 from collections import namedtuple
@@ -25,6 +26,7 @@ from tile import Tileset
 from music import LevelMusic
 from controls import InputHandler
 from resources import *
+#from authority import Authority
 
 width = 1024
 height = 1024
@@ -120,12 +122,12 @@ class GameClient():
     def menu_setup(self):
         self.menu_ctf_join = Menu(self.screen,
                             "Capture the Code: Join a game",
-                            {"RARY":{"desc":"TEMPO", "action":"play_ctf", "pos":0}},
+                            {"Join skirmish":{"desc":"Join any available skirmish", "action":"play_ctf", "pos":0}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
         self.menu_ctf_host = Menu(self.screen,
                             "Capture the Code: Host a game",
-                            {"RARY":{"desc":"TEMPO", "action":None, "pos":0}},
+                            {"Host skirmish":{"desc":"Start a game that anyone can join at any time", "action":"host_skirmish_ctf", "pos":0}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
         self.menu_ctf_controls = Menu(self.screen,
@@ -176,6 +178,7 @@ class GameClient():
         self.menu_setup()
         self.state = "menu"
         self.menu_current = self.menu_main
+        self.host_authority = None
 
         if me.mute == "False":
             LevelMusic.play_music_repeat()
@@ -187,6 +190,12 @@ class GameClient():
                 
                 if self.state == "menu":
                     #This means we're in the menus.
+                    if self.host_authority:
+                        print("???")
+                        self.host_authority.terminate() #Stop the child before things get out of hand.
+                        if not self.host_authority.poll():
+                            print("die child")
+                            self.host_authority.kill() #Kill the child if it's being particularly naughty.
                     action = None
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
@@ -215,6 +224,9 @@ class GameClient():
                             break
                         elif action == "play_ctf":
                             self.state = "game_ctf"
+                        elif action == "host_skirmish_ctf":
+                            self.host_authority = subprocess.Popen(["./authority_ctf.sh"])
+                            self.state = "game_ctf"
                         elif action == "rejoy":
                             inputHandler.reloadJoysticks()
                         elif action == "input_name":
@@ -236,6 +248,10 @@ class GameClient():
                         inputHandler.setTimeout("special", 10)
                         inputHandler.setTimeout("move", move_delay)
                     if inputHandler.checkPress("start"):
+                        if self.host_authority:
+                            self.host_authority.terminate() #Stop the child before things get out of hand.
+                            if not self.host_authority.poll():
+                                self.host_authority.kill() #Kill the child if it's being particularly naughty.
                         self.state = "menu" #Temporary workaround until a proper pause menu is added (or possibly not if this works fine).
                     elif inputHandler.checkHold("up"):
                         me.move(Movement.UP)
