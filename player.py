@@ -65,7 +65,7 @@ class Player():
         self.blue_tileset = Tileset('assets/tilesets/blue.png', (3, 4), (32, 32))
         self.red_tileset = Tileset('assets/tilesets/red.png', (3, 4), (32, 32))
 
-        self.name = ''
+        self.name = "Player"
         self.x, self.y = (0, 0)
         self.animation_ticker = 0
         self.network = network

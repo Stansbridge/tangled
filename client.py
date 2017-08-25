@@ -133,19 +133,29 @@ class GameClient():
                             {"Reload joysticks":{"desc":"Try this if your controller isn't responding", "action":"rejoy", "pos":0}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
+        self.menu_ctf_name = MenuInput(self.screen,
+                                        "Capture the Code: Change name",
+                                        "Name: ",
+                                        (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
+                                        None,
+                                        (1,10),
+                                        self.players.me.name,
+                                        "input_name")
         self.menu_ctf_main = Menu(self.screen,
                             "Capture the Code: Main menu",
                             {"Join game":{"desc":"Join an existing lobby", "action":self.menu_ctf_join, "pos":0},
                             "Host game":{"desc":"Host a game lobby", "action":self.menu_ctf_host, "pos":1},
-                            "Controls":{"desc":"Edit control bindings", "action":self.menu_ctf_controls, "pos":2},
-                            "Help":{"desc":"Visit the wiki", "action":"help", "pos":3},
-                            "Mute":{"desc":"Toggle game sounds", "action":"mute", "pos":4},
-                            "Quit":{"desc":"Shut it down", "action":"quit", "pos":5}},
+                            "Change name":{"desc":"Change your name (visible to others)", "action":self.menu_ctf_name, "pos":2},
+                            "Controls":{"desc":"Edit control bindings", "action":self.menu_ctf_controls, "pos":3},
+                            "Help":{"desc":"Visit the wiki", "action":"help", "pos":4},
+                            "Mute":{"desc":"Toggle game sounds", "action":"mute", "pos":5},
+                            "Quit":{"desc":"Shut it down", "action":"quit", "pos":6}},
                             (self.map.screen.get_width() * 0.45, self.map.screen.get_height()*0.4),
                             None)
         self.menu_ctf_join.parent = self.menu_ctf_main
         self.menu_ctf_host.parent = self.menu_ctf_main
         self.menu_ctf_controls.parent = self.menu_ctf_main
+        self.menu_ctf_name.parent = self.menu_ctf_main
 
     def run(self):
         running = True
@@ -171,12 +181,18 @@ class GameClient():
                 
                 if self.state == "menu":
                     #This means we're in the menus.
+                    action = None
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT or event.type == pygame.locals.QUIT:
                             running = False
                             break
-                    action = self.menu_current.update(inputHandler)
-                    if type(action) is Menu:
+                        if type(self.menu_current) is MenuInput:
+                            action = self.menu_current.update(inputHandler, event)
+                    if type(self.menu_current) is MenuInput:
+                        self.menu_current.render()
+                    else:
+                        action = self.menu_current.update(inputHandler)
+                    if type(action) is Menu or type(action) is MenuInput:
                         self.menu_current = action
                     else:
                         if action == "help":
@@ -195,6 +211,10 @@ class GameClient():
                             self.state = "game_ctf"
                         elif action == "rejoy":
                             inputHandler.reloadJoysticks()
+                        elif action == "input_name":
+                            self.players.me.set_name(self.menu_current.char_name, True)
+                            if self.menu_current.parent:
+                                self.menu_current = self.menu_current.parent
 
                 elif self.state == "game_ctf": #There may only be one game at the moment, but this makes it easier to add different game types in the future.
                     #This means we have to actually run the game.
