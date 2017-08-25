@@ -24,6 +24,9 @@ class Menu():
         self.logo = pygame.transform.scale(pygame.image.load("assets/images/logo.jpg"), (700, 200))
         self.font_path = client.font
     
+    def option_add(self, option, desc, action, pos):
+        self.options[option] = {"desc":desc, "action":action, "pos":pos}
+    
     def render_text(self, font, text, pos = (0, 0), colour = colours["black"]):
         rendered_text_surface = font.render(text, False, colour)
         self.pygame_screen.blit(rendered_text_surface, pos)

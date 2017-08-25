@@ -76,6 +76,8 @@ class InputHandler():
                             "select":0}
     
     def reloadJoysticks(self): #Aside from being used during the InputHandler init, this can be used for a menu option for if the player connects a joystick after the game has already start.
+        if pygame.joystick.get_init():
+            pygame.joystick.quit()
         pygame.joystick.init()
         joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
         self.joystick = False
